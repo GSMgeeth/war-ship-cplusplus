@@ -9,8 +9,8 @@
 
 // below are the constants and global vairables.
 
-const int BATTLEGROUND_LENGTH = 6;
-const int BATTLEGROUND_HEIGHT = 8;
+const int BATTLEGROUND_LENGTH = 7;
+const int BATTLEGROUND_HEIGHT = 9;
 
 std::string battleground[BATTLEGROUND_HEIGHT][BATTLEGROUND_LENGTH];
 
@@ -19,10 +19,17 @@ enum class AttackType {STRAIGHT, LISH};
 int a_position[2];
 int b_position[2];
 
+int missile_position[2];
+
 // below are the action methods.
 
 void printMessage(const char * message) {
     std::cout << message;
+}
+
+void updateMissilePosition(int x, int y) {
+    missile_position[0] = y;
+    missile_position[1] = x;
 }
 
 void updatePositionA(int x, int y) {
@@ -59,8 +66,8 @@ void drawBattleGround() {
 }
 
 void emptyBattleGround() {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i <= 8; i++) {
+        for (int j = 0; j <= 6; j++) {
             battleground[i][j] = "  -  ";
         }
     }
@@ -83,28 +90,79 @@ void putShipInBattleGround(int xa, int ya, int xb, int yb) {
     }
 }
 
-void attack(std::string from, std::string to, AttackType attackType) {
+void putMissileInBattleGround(int x, int y) {
+    if (BATTLEGROUND_HEIGHT > y && BATTLEGROUND_LENGTH > x) {
+        battleground[y][x] = "  *  ";
+        
+        updateMissilePosition(x, y);
+        
+        drawBattleGround();
+    }
+}
+
+void lauchStraightAttack(int *from, int *to) {
+    // todo
+    putMissileInBattleGround(to[1], to[0]);
+}
+
+bool attackStraight(std::string from, int* to) {
+    if (from == "a") {
+        if (a_position[0] - to[0] == 0 || a_position[1] - to[1] == 0 || a_position[0] - to[0] == a_position[1] - to[1]) {
+            std::cout << "Launching straight attack from A... \n";
+            lauchStraightAttack(a_position, to);
+            
+            return true;
+        } else {
+            return false;
+        }
+    } else if (from == "b") {
+        if (b_position[0] - to[0] == 0 || b_position[1] - to[1] == 0 || b_position[0] - to[0] == b_position[1] - to[1]) {
+            std::cout << "Launching straight attack from B... \n";
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+void attack(std::string from, int* to, AttackType attackType) {
+    bool isAttackLaunched = false;
+    
     switch (attackType) {
         case AttackType::STRAIGHT:
-            std::cout << "Straight attack from " + from;
+            isAttackLaunched = attackStraight(from, to);
             break;
         
         case AttackType::LISH:
             std::cout << "Lish attack from " + from;
+            isAttackLaunched = true;
             break;
             
         default:
             break;
+    }
+    
+    if (isAttackLaunched) {
+        std::cout << "Attack launched successfully!";
+    } else {
+        std::cout << "Attack failed to launch!";
     }
 }
 
 int main(int argc, const char * argv[]) {
     
     initiateBattleGround();
+    
     putShipInBattleGround(3, 2, 5, 4);
     std::cout << "\n";
     
-    attack("a", "b", AttackType::STRAIGHT);
+    int attackToCoordinates[2];
+    attackToCoordinates[0] = 5;
+    attackToCoordinates[1] = 6;
+    
+    attack("a", attackToCoordinates, AttackType::STRAIGHT);
     
     printMessage("\nWelcome to the battleground!\n");
     return 0;
