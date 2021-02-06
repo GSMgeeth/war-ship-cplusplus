@@ -6,6 +6,7 @@
 //
 
 #include <iostream>
+#include<unistd.h>
 
 // below are the constants and global vairables.
 
@@ -13,6 +14,7 @@ const int BATTLEGROUND_LENGTH = 7;
 const int BATTLEGROUND_HEIGHT = 9;
 
 std::string battleground[BATTLEGROUND_HEIGHT][BATTLEGROUND_LENGTH];
+std::string oldBattleground[BATTLEGROUND_HEIGHT][BATTLEGROUND_LENGTH];
 
 enum class AttackType {STRAIGHT, LISH};
 
@@ -50,12 +52,15 @@ void updatePositions(int xa, int ya, int xb, int yb) {
 void initiateBattleGround() {
     for (int i = 0; i <= 8; i++) {
         for (int j = 0; j <= 6; j++) {
+            oldBattleground[i][j] = "  -  ";
             battleground[i][j] = "  -  ";
         }
     }
 }
 
 void drawBattleGround() {
+    std::cout << std::string(50, '\n');
+    
     for (int i = 1; i <= 8; i++) {
         for (int j = 1; j <= 6; j++) {
             std::cout << battleground[i][j];
@@ -63,11 +68,33 @@ void drawBattleGround() {
         
         std::cout << "\n";
     }
+    
+    std::cout << "\n";
+}
+
+void restoreBattleGround() {
+    for (int i = 1; i <= 8; i++) {
+        for (int j = 1; j <= 6; j++) {
+            battleground[i][j] = oldBattleground[i][j];
+        }
+    }
+    
+    drawBattleGround();
+}
+
+void recordHistory() {
+    for (int i = 1; i <= 8; i++) {
+        for (int j = 1; j <= 6; j++) {
+            oldBattleground[i][j] = battleground[i][j];
+        }
+    }
 }
 
 void emptyBattleGround() {
     for (int i = 0; i <= 8; i++) {
         for (int j = 0; j <= 6; j++) {
+            recordHistory();
+            
             battleground[i][j] = "  -  ";
         }
     }
@@ -80,6 +107,8 @@ void emptyBattleGround() {
 void putShipInBattleGround(int xa, int ya, int xb, int yb) {
     if (BATTLEGROUND_HEIGHT > ya && BATTLEGROUND_HEIGHT > yb) {
         if (BATTLEGROUND_LENGTH > xa && BATTLEGROUND_LENGTH > xb) {
+            recordHistory();
+            
             battleground[ya][xa] = "| a |";
             battleground[yb][xb] = "| b |";
             
@@ -92,6 +121,8 @@ void putShipInBattleGround(int xa, int ya, int xb, int yb) {
 
 void putMissileInBattleGround(int x, int y) {
     if (BATTLEGROUND_HEIGHT > y && BATTLEGROUND_LENGTH > x) {
+        recordHistory();
+        
         battleground[y][x] = "  *  ";
         
         updateMissilePosition(x, y);
@@ -101,13 +132,36 @@ void putMissileInBattleGround(int x, int y) {
 }
 
 void lauchStraightAttack(int *from, int *to) {
-    // todo
-    putMissileInBattleGround(to[1], to[0]);
+    int attackToCoordinates[2];
+    attackToCoordinates[0] = to[0];
+    attackToCoordinates[1] = to[1];
+    
+    int attackFromCoordinates[2];
+    attackFromCoordinates[0] = from[0];
+    attackFromCoordinates[1] = from[1];
+    
+    int length = 0;
+    if (from[0] - to[0] != 0) {
+        length = abs(from[0] - to[0]);
+    } else if (from[1] - to[1] != 0) {
+        length = abs(from[1] - to[1]);
+    }
+    
+    for (int i = 1; i <= length; i++) {
+        
+        // TODO check if the missile hit a ship
+        
+        putMissileInBattleGround(from[1] + i, from[0] + i);
+        
+        usleep(2000000);
+        
+        restoreBattleGround();
+    }
 }
 
 bool attackStraight(std::string from, int* to) {
     if (from == "a") {
-        if (a_position[0] - to[0] == 0 || a_position[1] - to[1] == 0 || a_position[0] - to[0] == a_position[1] - to[1]) {
+        if (a_position[0] - to[0] == 0 || a_position[1] - to[1] == 0 || abs(a_position[0] - to[0]) == abs(a_position[1] - to[1])) {
             std::cout << "Launching straight attack from A... \n";
             lauchStraightAttack(a_position, to);
             
@@ -116,7 +170,7 @@ bool attackStraight(std::string from, int* to) {
             return false;
         }
     } else if (from == "b") {
-        if (b_position[0] - to[0] == 0 || b_position[1] - to[1] == 0 || b_position[0] - to[0] == b_position[1] - to[1]) {
+        if (b_position[0] - to[0] == 0 || b_position[1] - to[1] == 0 || abs(b_position[0] - to[0]) == abs(b_position[1] - to[1])) {
             std::cout << "Launching straight attack from B... \n";
             return true;
         } else {
